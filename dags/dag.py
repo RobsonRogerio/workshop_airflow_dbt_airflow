@@ -4,7 +4,7 @@ from cosmos.profiles import PostgresUserPasswordProfileMapping
 import os
 from pendulum import datetime
 
-profile_config = ProfileConfig(
+profile_config_dev = ProfileConfig(
     profile_name="jornada_dw",
     target_name="dev",
     profile_mapping=PostgresUserPasswordProfileMapping(
@@ -12,25 +12,25 @@ profile_config = ProfileConfig(
         profile_args={"schema": "public"},
     ),
 )
-# profile_config_prod = ProfileConfig(
-#     profile_name="jornada_dw",
-#     target_name="prod",
-#     profile_mapping=PostgresUserPasswordProfileMapping(
-#         conn_id="railway_postgres_db",
-#         profile_args={"schema": "public"},
-#     ),
-# )
+profile_config_prod = ProfileConfig(
+    profile_name="jornada_dw",
+    target_name="prod",
+    profile_mapping=PostgresUserPasswordProfileMapping(
+        conn_id="neon_postgres_db",
+        profile_args={"schema": "public"},
+    ),
+)
 
-# dbt_env = Variable.get("dbt_env", default_var="dev").lower()
-# if dbt_env not in ("dev", "prod"):
-#     raise ValueError(f"dbt_env inválido: {dbt_env!r}, use 'dev' ou 'prod'")
+dbt_env = Variable.get("dbt_env", default_var="dev").lower()
+if dbt_env not in ("dev", "prod"):
+    raise ValueError(f"dbt_env inválido: {dbt_env!r}, use 'dev' ou 'prod'")
 
-# profile_config = profile_config_dev if dbt_env == "dev" else profile_config_prod
+profile_config = profile_config_dev if dbt_env == "dev" else profile_config_prod
 
 my_cosmos_dag = DbtDag(
     project_config=ProjectConfig(
         dbt_project_path="/usr/local/airflow/dbt/jornada_dw",
-        # project_name="jornada_dw",
+        project_name="jornada_dw",
     ),
     profile_config=profile_config,
     execution_config=ExecutionConfig(
@@ -38,11 +38,13 @@ my_cosmos_dag = DbtDag(
     ),
     operator_args={
         "install_deps": True,
-        # "target": profile_config.target_name,
+        "target": profile_config.target_name,
     },
     schedule="@daily",
     start_date=datetime(2026, 11, 9),
     catchup=False,
-    dag_id="dag_jornada_dw",
+    dag_id=f"dag_jornada_dw_{dbt_env}",
     default_args={"retries": 2},
+    max_active_runs=1,
+
 )
