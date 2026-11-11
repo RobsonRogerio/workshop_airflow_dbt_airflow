@@ -17,7 +17,8 @@ profile_config_prod = ProfileConfig(
     target_name="prod",
     profile_mapping=PostgresUserPasswordProfileMapping(
         conn_id="neon_postgres_db",
-        profile_args={"schema": "public"},
+        # sslmode fixo: o Neon exige SSL e isso evita depender de como o campo foi preenchido na conexão
+        profile_args={"schema": "public", "sslmode": "require"},
     ),
 )
 
